@@ -2,24 +2,25 @@ package stf
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 
+	appmodulev2 "cosmossdk.io/core/appmodule/v2"
 	"cosmossdk.io/core/router"
 	"cosmossdk.io/core/store"
 	"google.golang.org/protobuf/runtime/protoiface"
 )
 
 // NewRouterService creates a router.Service which allows to invoke messages and queries using the msg router.
-func NewRouterService(storeService store.KVStoreService, queryRouter interface{}, msgRouter interface{}) router.Service {
+func NewRouterService(storeService store.KVStoreService, queryRouter appmodulev2.Handler, msgRouter appmodulev2.Handler) router.Service {
 	return &routerService{
 		queryRouterService: &queryRouterService{
 			storeService: storeService, // TODO: this will be used later on for authenticating modules before routing
-			router:       queryRouter,
+			handler:      queryRouter,
 		},
 		msgRouterService: &msgRouterService{
 			storeService: storeService, // TODO: this will be used later on for authenticating modules before routing
-			router:       msgRouter,
+			handler:      msgRouter,
 		},
 	}
 }
@@ -45,13 +46,13 @@ var _ router.Router = (*msgRouterService)(nil)
 
 type msgRouterService struct {
 	storeService store.KVStoreService
-	router       interface{}
+	handler      appmodulev2.Handler
 }
 
 // CanInvoke returns an error if the given message cannot be invoked.
 func (m *msgRouterService) CanInvoke(ctx context.Context, typeURL string) error {
 	if typeURL == "" {
-		return fmt.Errorf("missing type url")
+		return errors.New("missing type url")
 	}
 
 	_ = strings.TrimPrefix(typeURL, "/")
@@ -63,25 +64,27 @@ func (m *msgRouterService) CanInvoke(ctx context.Context, typeURL string) error 
 // The response must be known and passed as a parameter.
 // Use InvokeUntyped if the response type is not known.
 func (m *msgRouterService) InvokeTyped(ctx context.Context, msg, resp protoiface.MessageV1) error {
-	return nil
+	var err error
+	resp, err = m.handler(ctx, msg)
+	return err
 }
 
 // InvokeUntyped execute a message and returns a response.
 func (m *msgRouterService) InvokeUntyped(ctx context.Context, msg protoiface.MessageV1) (protoiface.MessageV1, error) {
-	return nil, nil
+	return m.handler(ctx, msg)
 }
 
 var _ router.Router = (*queryRouterService)(nil)
 
 type queryRouterService struct {
 	storeService store.KVStoreService
-	router       interface{}
+	handler      appmodulev2.Handler
 }
 
 // CanInvoke returns an error if the given request cannot be invoked.
 func (m *queryRouterService) CanInvoke(ctx context.Context, typeURL string) error {
 	if typeURL == "" {
-		return fmt.Errorf("missing type url")
+		return errors.New("missing type url")
 	}
 
 	_ = strings.TrimPrefix(typeURL, "/")
@@ -93,10 +96,12 @@ func (m *queryRouterService) CanInvoke(ctx context.Context, typeURL string) erro
 // The response must be known and passed as a parameter.
 // Use InvokeUntyped if the response type is not known.
 func (m *queryRouterService) InvokeTyped(ctx context.Context, req, resp protoiface.MessageV1) error {
-	return nil
+	var err error
+	resp, err = m.handler(ctx, req)
+	return err
 }
 
 // InvokeUntyped execute a message and returns a response.
 func (m *queryRouterService) InvokeUntyped(ctx context.Context, req protoiface.MessageV1) (protoiface.MessageV1, error) {
-	return nil, nil
+	return m.handler(ctx, req)
 }
