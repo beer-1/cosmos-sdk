@@ -275,7 +275,7 @@ func ProvideEnvironment(logger log.Logger, config *runtimev2.Module, key depinje
 		EventService:    stf.NewEventService(),
 		GasService:      stf.NewGasMeterService(),
 		HeaderService:   stf.HeaderService{},
-		RouterService:   stf.NewRouterService(kvService, nil, nil),
+		RouterService:   stf.NewRouterService(kvService, app.app.queryRouterBuilder, app.app.msgRouterBuilder),
 		KVStoreService:  kvService,
 		MemStoreService: memService,
 	}

@@ -12,7 +12,17 @@ import (
 )
 
 // NewRouterService creates a router.Service which allows to invoke messages and queries using the msg router.
-func NewRouterService(storeService store.KVStoreService, queryRouter appmodulev2.Handler, msgRouter appmodulev2.Handler) router.Service {
+func NewRouterService(storeService store.KVStoreService, queryRouterBuilder *MsgRouterBuilder, msgRouterBuilder *MsgRouterBuilder) router.Service {
+	queryRouter, err := queryRouterBuilder.Build()
+	if err != nil {
+		panic("cannot create queryRouter")
+	}
+
+	msgRouter, err := msgRouterBuilder.Build()
+	if err != nil {
+		panic("cannot create msgRouter")
+	}
+
 	return &routerService{
 		queryRouterService: &queryRouterService{
 			storeService: storeService, // TODO: this will be used later on for authenticating modules before routing
