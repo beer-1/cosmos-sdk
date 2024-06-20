@@ -1007,7 +1007,7 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, msgsV2 []protov2.Me
 		}
 
 		// ADR 031 request type routing
-		msgResult, err := handler(ctx, msg)
+		msgResult, err := handler(ctx.WithExecMode(sdk.ExecMode(mode)), msg)
 		if err != nil {
 			return nil, errorsmod.Wrapf(err, "failed to execute message; message index: %d", i)
 		}

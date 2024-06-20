@@ -3,6 +3,8 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"time"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/store"
@@ -229,7 +231,14 @@ func (k BaseSendKeeper) SendCoins(ctx context.Context, fromAddr, toAddr sdk.AccA
 	accExists := k.ak.HasAccount(ctx, toAddr)
 	if !accExists {
 		defer telemetry.IncrCounter(1, "new", "account")
-		k.ak.SetAccount(ctx, k.ak.NewAccountWithAddress(ctx, toAddr))
+		acc := k.ak.NewAccountWithAddress(ctx, toAddr)
+
+		// sleep for 10ms to simulate a slow network
+		if sdk.UnwrapSDKContext(ctx).ExecMode() == sdk.ExecModeSimulate {
+			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+		}
+
+		k.ak.SetAccount(ctx, acc)
 	}
 
 	// bech32 encoding is expensive! Only do it once for fromAddr
