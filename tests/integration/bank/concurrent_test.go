@@ -64,6 +64,31 @@ func Test20685(t *testing.T) {
 	wg.Wait()
 }
 
+func Test20685_WithCheckTxSimulate(t *testing.T) {
+	wg := sync.WaitGroup{}
+
+	numAccounts := 100
+	s, _, _, txsBytes := setupSUT(t, numAccounts)
+
+	for i := 0; i < numAccounts/2-1; i++ {
+		wg.Add(1)
+		go func(i int) {
+			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+			_, _, err := s.App.Simulate(txsBytes[i])
+
+			wg.Done()
+			require.NoError(t, err)
+		}(i)
+	}
+
+	for i := numAccounts/2 - 1; i < numAccounts; i++ {
+		_, err := s.App.CheckTx(&abci.RequestCheckTx{Tx: txsBytes[i], Type: abci.CheckTxType_New})
+		require.NoError(t, err)
+	}
+
+	wg.Wait()
+}
+
 func setupSUT(t *testing.T, numAccounts int) (*suite, *baseapp.BaseApp, sdk.Context, [][]byte) {
 	senderKeys := make([]cryptotypes.PrivKey, numAccounts)
 	for i := 0; i < numAccounts; i++ {

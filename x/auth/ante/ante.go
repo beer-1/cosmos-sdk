@@ -51,6 +51,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		NewSigGasConsumeDecorator(options.AccountKeeper, options.SigGasConsumer),
 		NewSigVerificationDecorator(options.AccountKeeper, options.SignModeHandler),
 		NewIncrementSequenceDecorator(options.AccountKeeper),
+		NewAccountCreatorDecorator(options.AccountKeeper),
 	}
 
 	return sdk.ChainAnteDecorators(anteDecorators...), nil
